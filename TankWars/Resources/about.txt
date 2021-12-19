@@ -1,0 +1,17 @@
+﻿Tank Wars v3.2
+
+Artwork by Camron Wilson
+Game design and implementation
+   by Camron Wilson and Walker Dauphin
+
+Collecting a powerup grants the user
+the ability to alt fire, shooting
+a powerful beam to destroy all tanks
+in its path instantly.
+
+The settings can be edited for
+an "extra" gamemode that changes
+the powerup ability to be faster
+firing rather than a beam.
+
+Created for CS3500 Fall 2021

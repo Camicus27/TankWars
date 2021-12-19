@@ -1,0 +1,9 @@
+﻿W:		Move up
+A:		Move left
+S:		Move down
+D:		Move right
+Mouse:		Aim
+Left click:		Fire projectile
+Right click:	Fire powerup (disabled in 
+		extra gamemode)
+Esc:		Quit
