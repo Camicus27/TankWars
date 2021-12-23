@@ -191,7 +191,7 @@ namespace Server
                         // If a client sends a malformed request, disconnect that client.
                         Console.WriteLine("Client " + state.ID + " has been kicked.");
                         theWorld.RemoveClient(state);
-                        theWorld.RemoveTank(Convert.ToInt32(state.ID));
+                        theWorld.GetTank((int)state.ID).Disconnected = true;
                         state.TheSocket.Disconnect(false);
                     }
 
@@ -519,104 +519,6 @@ namespace Server
 
 
         /// <summary>
-        /// Reads the settings file and creates the world
-        /// </summary>
-        private static void Setup()
-        {
-            // Read settings.xml, update all appropriate information in world model
-            // "..\\..\\..\\..\\Resources\\settings.xml"
-            // ".\\settings.xml"
-
-            try
-            {
-                using (XmlReader reader = XmlReader.Create("..\\..\\..\\..\\Resources\\settings.xml"))
-                {
-                    // While there is another XML tag
-                    while (reader.Read())
-                    {
-                        // If the next item is an XML tag
-                        if (reader.IsStartElement())
-                        {
-                            // Read the name of the tag
-                            switch (reader.Name.ToString())
-                            {
-                                case "UniverseSize":
-                                    theWorld.Size = reader.ReadElementContentAsInt();
-                                    break;
-                                case "MSPerFrame":
-                                    theWorld.MSPerFrame = reader.ReadElementContentAsInt();
-                                    break;
-                                case "FramesPerShot":
-                                    theWorld.FramesPerShot = reader.ReadElementContentAsInt();
-                                    break;
-                                case "RespawnRate":
-                                    theWorld.RespawnRate = reader.ReadElementContentAsInt();
-                                    break;
-                                case "StartingHP":
-                                    theWorld.StartingHP = reader.ReadElementContentAsInt();
-                                    break;
-                                case "ProjectileSpeed":
-                                    theWorld.ProjectileSpeed = reader.ReadElementContentAsInt();
-                                    break;
-                                case "EngineStrength":
-                                    theWorld.EngineStrength = reader.ReadElementContentAsInt();
-                                    break;
-                                case "TankSize":
-                                    theWorld.TankSize = reader.ReadElementContentAsInt();
-                                    break;
-                                case "WallSize":
-                                    theWorld.WallSize = reader.ReadElementContentAsInt();
-                                    break;
-                                case "MaxPowerups":
-                                    theWorld.MaxPowerups = reader.ReadElementContentAsInt();
-                                    break;
-                                case "MaxPowerupDelay":
-                                    theWorld.MaxPowerupDelay = reader.ReadElementContentAsInt();
-                                    break;
-                                case "Gamemode":
-                                    theWorld.gamemode = reader.ReadElementContentAsString();
-                                    break;
-                                case "Wall":
-                                    // Whitespace
-                                    reader.Read();
-                                    // P1 header
-                                    reader.Read();
-                                    // X header
-                                    reader.Read();
-                                    // Assign P1 x-coord
-                                    double p1_x = reader.ReadElementContentAsDouble();
-                                    // Assign P1 y-coord
-                                    double p1_y = reader.ReadElementContentAsDouble();
-                                    // Whitespace
-                                    reader.Read();
-                                    // P2 header
-                                    reader.Read();
-                                    // X header
-                                    reader.Read();
-                                    // Assign P2 x-coord
-                                    double p2_x = reader.ReadElementContentAsDouble();
-                                    // Assign P2 y-coord
-                                    double p2_y = reader.ReadElementContentAsDouble();
-                                    // Create a new wall
-                                    Vector2D p1 = new Vector2D(p1_x, p1_y);
-                                    Vector2D p2 = new Vector2D(p2_x, p2_y);
-                                    theWorld.AddWall(IDCounter, new Wall(IDCounter, p1, p2));
-                                    IDCounter++;
-                                    break;
-                            }
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // Something wrong with reading the settings file
-                Console.WriteLine("There was an error reading the settings.xml");
-            }
-        }
-
-
-        /// <summary>
         /// Helper method to determine a valid, random spawn location
         /// </summary>
         /// <returns>Valid spawnpoint</returns>
@@ -682,7 +584,7 @@ namespace Server
                     if (!(clientList[i].TheSocket.Connected))
                     {
                         theWorld.RemoveClient(clientList[i]);
-                        theWorld.RemoveTank(Convert.ToInt32(clientList[i].ID));
+                        theWorld.GetTank(i).Disconnected = true;
                         Console.WriteLine("Client " + clientList[i].ID + " has disconnected.");
                     }
                 }
@@ -808,10 +710,15 @@ namespace Server
                     }
                 }
 
-                // Check if any tanks have died and remove if so
+                // Check if any tanks have died or disconnected and remove if so
                 List<Tank> tankList = theWorld.GetTanks().ToList();
                 for (int i = 0; i < tankList.Count; i++)
                 {
+                    if (tankList[i].Disconnected)
+                    {
+                        theWorld.RemoveTank(tankList[i].ID);
+                        continue;
+                    }
                     if (tankList[i].Died)
                     {
                         theWorld.RemoveTank(tankList[i].ID);
@@ -875,6 +782,104 @@ namespace Server
                 { }
                 frameWatch.Restart();
                 Update();
+            }
+        }
+
+
+        /// <summary>
+        /// Reads the settings file and creates the world
+        /// </summary>
+        private static void Setup()
+        {
+            // Read settings.xml, update all appropriate information in world model
+            // "..\\..\\..\\..\\Resources\\settings.xml"
+            // ".\\settings.xml"
+
+            try
+            {
+                using (XmlReader reader = XmlReader.Create("..\\..\\..\\..\\Resources\\settings.xml"))
+                {
+                    // While there is another XML tag
+                    while (reader.Read())
+                    {
+                        // If the next item is an XML tag
+                        if (reader.IsStartElement())
+                        {
+                            // Read the name of the tag
+                            switch (reader.Name.ToString())
+                            {
+                                case "UniverseSize":
+                                    theWorld.Size = reader.ReadElementContentAsInt();
+                                    break;
+                                case "MSPerFrame":
+                                    theWorld.MSPerFrame = reader.ReadElementContentAsInt();
+                                    break;
+                                case "FramesPerShot":
+                                    theWorld.FramesPerShot = reader.ReadElementContentAsInt();
+                                    break;
+                                case "RespawnRate":
+                                    theWorld.RespawnRate = reader.ReadElementContentAsInt();
+                                    break;
+                                case "StartingHP":
+                                    theWorld.StartingHP = reader.ReadElementContentAsInt();
+                                    break;
+                                case "ProjectileSpeed":
+                                    theWorld.ProjectileSpeed = reader.ReadElementContentAsInt();
+                                    break;
+                                case "EngineStrength":
+                                    theWorld.EngineStrength = reader.ReadElementContentAsInt();
+                                    break;
+                                case "TankSize":
+                                    theWorld.TankSize = reader.ReadElementContentAsInt();
+                                    break;
+                                case "WallSize":
+                                    theWorld.WallSize = reader.ReadElementContentAsInt();
+                                    break;
+                                case "MaxPowerups":
+                                    theWorld.MaxPowerups = reader.ReadElementContentAsInt();
+                                    break;
+                                case "MaxPowerupDelay":
+                                    theWorld.MaxPowerupDelay = reader.ReadElementContentAsInt();
+                                    break;
+                                case "Gamemode":
+                                    theWorld.gamemode = reader.ReadElementContentAsString();
+                                    break;
+                                case "Wall":
+                                    // Whitespace
+                                    reader.Read();
+                                    // P1 header
+                                    reader.Read();
+                                    // X header
+                                    reader.Read();
+                                    // Assign P1 x-coord
+                                    double p1_x = reader.ReadElementContentAsDouble();
+                                    // Assign P1 y-coord
+                                    double p1_y = reader.ReadElementContentAsDouble();
+                                    // Whitespace
+                                    reader.Read();
+                                    // P2 header
+                                    reader.Read();
+                                    // X header
+                                    reader.Read();
+                                    // Assign P2 x-coord
+                                    double p2_x = reader.ReadElementContentAsDouble();
+                                    // Assign P2 y-coord
+                                    double p2_y = reader.ReadElementContentAsDouble();
+                                    // Create a new wall
+                                    Vector2D p1 = new Vector2D(p1_x, p1_y);
+                                    Vector2D p2 = new Vector2D(p2_x, p2_y);
+                                    theWorld.AddWall(IDCounter, new Wall(IDCounter, p1, p2));
+                                    IDCounter++;
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Something wrong with reading the settings file
+                Console.WriteLine("There was an error reading the settings.xml");
             }
         }
     }

@@ -1,4 +1,6 @@
 ﻿
+using System.Drawing;
+
 namespace TankWars
 {
     partial class TankGameWindow
@@ -45,9 +47,11 @@ namespace TankWars
             this.ServerTooltip = new System.Windows.Forms.ToolTip(this.components);
             this.ConnectTooltip = new System.Windows.Forms.ToolTip(this.components);
             this.GamemodeButton = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
+            this.GamemodeLabel = new System.Windows.Forms.Label();
+            this.song = new AxWMPLib.AxWindowsMediaPlayer();
             this.HelpButtonPanel.SuspendLayout();
             this.HelpButtonStrip.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.song)).BeginInit();
             this.SuspendLayout();
             // 
             // ServerLabel
@@ -200,23 +204,34 @@ namespace TankWars
             this.GamemodeButton.UseVisualStyleBackColor = false;
             this.GamemodeButton.Click += new System.EventHandler(this.GamemodeButton_Click);
             // 
-            // label1
+            // GamemodeLabel
             // 
-            this.label1.AutoSize = true;
-            this.label1.BackColor = System.Drawing.Color.Transparent;
-            this.label1.Font = new System.Drawing.Font("Elephant", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(802, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(140, 26);
-            this.label1.TabIndex = 7;
-            this.label1.Text = "Gamemode:";
+            this.GamemodeLabel.AutoSize = true;
+            this.GamemodeLabel.BackColor = System.Drawing.Color.Transparent;
+            this.GamemodeLabel.Font = new System.Drawing.Font("Elephant", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.GamemodeLabel.Location = new System.Drawing.Point(802, 0);
+            this.GamemodeLabel.Name = "GamemodeLabel";
+            this.GamemodeLabel.Size = new System.Drawing.Size(140, 26);
+            this.GamemodeLabel.TabIndex = 7;
+            this.GamemodeLabel.Text = "Gamemode:";
+            // 
+            // song
+            // 
+            this.song.Enabled = true;
+            this.song.Location = new System.Drawing.Point(1001, 2);
+            this.song.Name = "song";
+            this.song.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("song.OcxState")));
+            this.song.Size = new System.Drawing.Size(28, 24);
+            this.song.TabIndex = 11;
+            this.song.Visible = false;
             // 
             // TankGameWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1107, 1153);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.song);
+            this.Controls.Add(this.GamemodeLabel);
             this.Controls.Add(this.GamemodeButton);
             this.Controls.Add(this.Connect);
             this.Controls.Add(this.HelpButtonPanel);
@@ -224,7 +239,6 @@ namespace TankWars
             this.Controls.Add(this.NameText);
             this.Controls.Add(this.ServerText);
             this.Controls.Add(this.ServerLabel);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.HelpButtonStrip;
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "TankGameWindow";
@@ -233,6 +247,7 @@ namespace TankWars
             this.HelpButtonPanel.PerformLayout();
             this.HelpButtonStrip.ResumeLayout(false);
             this.HelpButtonStrip.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.song)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -253,7 +268,7 @@ namespace TankWars
         private System.Windows.Forms.ToolTip PlayerNameTooltip;
         private System.Windows.Forms.ToolTip ConnectTooltip;
         private System.Windows.Forms.Button GamemodeButton;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label GamemodeLabel;
     }
 }
 

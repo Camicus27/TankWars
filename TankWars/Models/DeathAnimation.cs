@@ -8,11 +8,14 @@ namespace Models
     {
         private Tank dyingTank;
         private int frameCounter;
-        private bool currentlyAnimating;
+        private bool hasPlayedAudio;
+        private bool hasDied;
 
         public DeathAnimation(Tank tankToDie)
         {
             dyingTank = tankToDie;
+            hasPlayedAudio = false;
+            frameCounter = 15;
         }
 
         /// <summary>
@@ -28,11 +31,11 @@ namespace Models
         /// <summary>
         /// Tracks the current state of the object, living or dead.
         /// </summary>
-        public bool IsDead { get { return frameCounter > 12; } }
+        public bool IsDead { get { return hasDied; } set { hasDied = value; } }
 
         /// <summary>
-        /// A boolean to determine if the animation is still continuing.
+        /// Tracks the current state of the audio.
         /// </summary>
-        public bool IsAnimating { get { return currentlyAnimating; } set { currentlyAnimating = value; } }
+        public bool HasPlayedAudio { get { return hasPlayedAudio; } set { hasPlayedAudio = value; } }
     }
 }

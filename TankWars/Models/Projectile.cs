@@ -26,6 +26,7 @@ namespace Models
         private int owner;
 
         private Vector2D velocity;
+        private bool hasPlayedAudio;
 
         public Projectile(int projectileID, Vector2D location, Vector2D direction, bool hasDied, int ownerID)
         {
@@ -41,6 +42,7 @@ namespace Models
             owner = ownerID;
 
             velocity = direction;
+            hasPlayedAudio = false;
         }
 
         /// <summary>
@@ -77,5 +79,10 @@ namespace Models
         /// </summary>
         /// <returns>A Vector2D object representing the projectile's current velocity.</returns>
         public Vector2D Velocity { get { return velocity; } set { velocity = value; } }
+
+        /// <summary>
+        /// Tracks the current state of the audio.
+        /// </summary>
+        public bool HasPlayedAudio { get { return hasPlayedAudio; } set { hasPlayedAudio = value; } }
     }
 }

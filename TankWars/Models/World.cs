@@ -17,6 +17,9 @@ namespace Models
         private Tank clientTank;
         private Vector2D mousePosition;
         private int clientPlayerID;
+        private int frameSize;
+        private double zoom;
+        private bool powerupCollected;
 
         // Assets availiable only to the server.
         private Dictionary<long, SocketState> clients;
@@ -44,6 +47,9 @@ namespace Models
             walls = new Dictionary<int, Wall>();
             beams = new List<BeamAnimation>();
             clientPlayerID = 0;
+            frameSize = 900;
+            zoom = 1;
+            powerupCollected = false;
             clientTank = new Tank(-1, "default", new Vector2D(0.0, 0.0), null, null, 0, 3, false, false, true, "default");
 
             // Server only
@@ -57,8 +63,8 @@ namespace Models
             startingHP = 0;
             projectileSpeed = 0;
             engineStrength = 0.0;
-            tankSize = 0;
-            wallSize = 0;
+            tankSize = 60;
+            wallSize = 50;
             maxPowerups = 0;
             maxPowerupDelay = 0;
             gamemode = "";
@@ -68,6 +74,16 @@ namespace Models
         /// The size of the World.
         /// </summary>
         public int Size { get { return universeSize; } set { universeSize = value; } }
+
+        /// <summary>
+        /// The size of the camera's frame.
+        /// </summary>
+        public int FrameSize { get { return frameSize; } set { frameSize = value; } }
+
+        /// <summary>
+        /// The zoom level.
+        /// </summary>
+        public double ZoomLevel { get { return zoom; } set { zoom = value; } }
 
         /// <summary>
         /// The unique identifier belonging to the client/player
@@ -147,6 +163,11 @@ namespace Models
         /// Verifies if the gamemode is extra (true) or basic (false).
         /// </summary>
         public bool GamemodeIsExtra { get { if (gamemode == "extra") return true; else return false; } }
+
+        /// <summary>
+        /// Verifies if the gamemode is extra (true) or basic (false).
+        /// </summary>
+        public bool PowerupCollected { get { return powerupCollected; } set { powerupCollected = value; } }
 
         // Getters for dictionary values
 
@@ -263,7 +284,7 @@ namespace Models
         }
         public void AddBeam(int beamID, Beam theBeam, Vector2D Endpoint)
         {
-            beams.Add(new BeamAnimation(theBeam, 100, Endpoint));
+            beams.Add(new BeamAnimation(theBeam, Endpoint));
         }
         public void RemoveBeam(BeamAnimation beam)
         {
@@ -332,13 +353,17 @@ namespace Models
             else
                 tanks.Add(tankID, updateTank);
 
+            if (updateTank.Disconnected)
+            {
+                tanks.Remove(tankID);
+                updateTank.Died = true;
+            }
+
             // Check if tank has died
-            if (updateTank.Died || updateTank.Disconnected)
+            if (updateTank.Died)
             {
                 // Add to list of death animations to perform
                 tankDeaths.Add(new DeathAnimation(updateTank));
-                // And remove from list of tanks
-                tanks.Remove(tankID);
             }
         }
 
@@ -356,7 +381,10 @@ namespace Models
 
             // Check if powerup has died, remove if true
             if (updatePowerup.Died)
+            {
                 powerups.Remove(powerupID);
+                PowerupCollected = true;
+            }
         }
 
         /// <summary>
@@ -370,7 +398,12 @@ namespace Models
         /// <param name="updateProj"></param>
         public void UpdateProjectile(int projID, Projectile updateProj)
         {
-            proj[projID] = updateProj;
+            // Check if new projectile, add if yes
+            if (!proj.ContainsKey(projID))
+                AddProjectile(projID, updateProj);
+
+            // Update projectile's location
+            proj[projID].Location = new Vector2D(updateProj.Location.GetX(), updateProj.Location.GetY());
 
             // Check if projectile has died, remove if true
             if (updateProj.Died)

@@ -1,4 +1,6 @@
-﻿using System.Windows.Forms;
+﻿using System.Drawing;
+using System.IO;
+using System.Windows.Forms;
 
 namespace TankWars
 {
@@ -138,7 +140,8 @@ namespace TankWars
             // GreenButton
             // 
             this.GreenButton.BackColor = System.Drawing.Color.Transparent;
-            this.GreenButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("GreenButton.BackgroundImage")));
+            this.GreenButton.BackgroundImage = Image.FromFile("..\\..\\..\\Resources\\Images\\GreenTank.png");
+            //this.GreenButton.BackgroundImage = Image.FromFile(Directory.GetCurrentDirectory() + "\\Resources\\GreenTank.png");
             this.GreenButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.GreenButton.Cursor = System.Windows.Forms.Cursors.Cross;
             this.GreenButton.ForeColor = System.Drawing.Color.Transparent;
@@ -151,7 +154,8 @@ namespace TankWars
             // MagentaButton
             // 
             this.MagentaButton.BackColor = System.Drawing.Color.Transparent;
-            this.MagentaButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("MagentaButton.BackgroundImage")));
+            this.MagentaButton.BackgroundImage = Image.FromFile("..\\..\\..\\Resources\\Images\\MagentaTank.png");
+            //this.GreenButton.BackgroundImage = Image.FromFile(Directory.GetCurrentDirectory() + "\\Resources\\MagentaTank.png");
             this.MagentaButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.MagentaButton.Cursor = System.Windows.Forms.Cursors.Cross;
             this.MagentaButton.ForeColor = System.Drawing.Color.Transparent;
@@ -164,7 +168,8 @@ namespace TankWars
             // BlueButton
             // 
             this.BlueButton.BackColor = System.Drawing.Color.Transparent;
-            this.BlueButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("BlueButton.BackgroundImage")));
+            this.BlueButton.BackgroundImage = Image.FromFile("..\\..\\..\\Resources\\Images\\BlueTank.png");
+            //this.GreenButton.BackgroundImage = Image.FromFile(Directory.GetCurrentDirectory() + "\\Resources\\BlueTank.png");
             this.BlueButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.BlueButton.Cursor = System.Windows.Forms.Cursors.Cross;
             this.BlueButton.ForeColor = System.Drawing.Color.Transparent;
@@ -177,7 +182,8 @@ namespace TankWars
             // YellowButton
             // 
             this.YellowButton.BackColor = System.Drawing.Color.Transparent;
-            this.YellowButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("YellowButton.BackgroundImage")));
+            this.YellowButton.BackgroundImage = Image.FromFile("..\\..\\..\\Resources\\Images\\YellowTank.png");
+            //this.GreenButton.BackgroundImage = Image.FromFile(Directory.GetCurrentDirectory() + "\\Resources\\YellowTank.png");
             this.YellowButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.YellowButton.Cursor = System.Windows.Forms.Cursors.Cross;
             this.YellowButton.ForeColor = System.Drawing.Color.Transparent;
@@ -190,7 +196,8 @@ namespace TankWars
             // OrangeButton
             // 
             this.OrangeButton.BackColor = System.Drawing.Color.Transparent;
-            this.OrangeButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("OrangeButton.BackgroundImage")));
+            this.OrangeButton.BackgroundImage = Image.FromFile("..\\..\\..\\Resources\\Images\\OrangeTank.png");
+            //this.GreenButton.BackgroundImage = Image.FromFile(Directory.GetCurrentDirectory() + "\\Resources\\OrangeTank.png");
             this.OrangeButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.OrangeButton.Cursor = System.Windows.Forms.Cursors.Cross;
             this.OrangeButton.ForeColor = System.Drawing.Color.Transparent;
@@ -203,7 +210,8 @@ namespace TankWars
             // CyanButton
             // 
             this.CyanButton.BackColor = System.Drawing.Color.Transparent;
-            this.CyanButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("CyanButton.BackgroundImage")));
+            this.CyanButton.BackgroundImage = Image.FromFile("..\\..\\..\\Resources\\Images\\CyanTank.png");
+            //this.GreenButton.BackgroundImage = Image.FromFile(Directory.GetCurrentDirectory() + "\\Resources\\CyanTank.png");
             this.CyanButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.CyanButton.Cursor = System.Windows.Forms.Cursors.Cross;
             this.CyanButton.ForeColor = System.Drawing.Color.Transparent;
@@ -216,7 +224,8 @@ namespace TankWars
             // RedButton
             // 
             this.RedButton.BackColor = System.Drawing.Color.Transparent;
-            this.RedButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("RedButton.BackgroundImage")));
+            this.RedButton.BackgroundImage = Image.FromFile("..\\..\\..\\Resources\\Images\\RedTank.png");
+            //this.GreenButton.BackgroundImage = Image.FromFile(Directory.GetCurrentDirectory() + "\\Resources\\RedTank.png");
             this.RedButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.RedButton.Cursor = System.Windows.Forms.Cursors.Cross;
             this.RedButton.ForeColor = System.Drawing.Color.Transparent;
@@ -229,7 +238,8 @@ namespace TankWars
             // PurpleButton
             // 
             this.PurpleButton.BackColor = System.Drawing.Color.Transparent;
-            this.PurpleButton.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("PurpleButton.BackgroundImage")));
+            this.PurpleButton.BackgroundImage = Image.FromFile("..\\..\\..\\Resources\\Images\\PurpleTank.png");
+            //this.GreenButton.BackgroundImage = Image.FromFile(Directory.GetCurrentDirectory() + "\\Resources\\PurpleTank.png");
             this.PurpleButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.PurpleButton.Cursor = System.Windows.Forms.Cursors.Cross;
             this.PurpleButton.ForeColor = System.Drawing.Color.Transparent;

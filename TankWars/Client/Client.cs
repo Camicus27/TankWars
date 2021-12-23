@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Drawing;
+using AxWMPLib;
 using System.Windows.Forms;
 using Models;
 using System.Threading;
 using System.Diagnostics;
 using System.IO;
+using System.Media;
 
 namespace TankWars
 {
@@ -18,8 +20,6 @@ namespace TankWars
         private DrawingPanel drawingPanel;
         // The color selection popup
         private ColorPopup colorPanel;
-        // Size of the camera view
-        private const int viewSize = 900;
         // Boolean flags for disabling the connect button
         private bool nameTextIsEmpty = false;
         private bool serverTextIsEmpty = false;
@@ -27,22 +27,31 @@ namespace TankWars
         private bool valid = true;
         // Color of the tank
         private string tankColor;
+        // Audio assets
+        private SoundPlayer timerSound;
+        private AxWindowsMediaPlayer song;
+        //private AxWindowsMediaPlayer shotSound;
+        //private AxWindowsMediaPlayer beamSound;
+        //private AxWindowsMediaPlayer powerupCollectedSound;
+        //private AxWindowsMediaPlayer tankDeathSound;
+        //private AxWindowsMediaPlayer respawnSound;
 
         public TankGameWindow(GameController ctrl)
         {
             InitializeComponent();
             theController = ctrl;
             theWorld = theController.GetWorld();
+            theWorld.FrameSize = 900;
 
             // Place and add the drawing panel
             drawingPanel = new DrawingPanel(theWorld);
             drawingPanel.Location = new Point(0, 60);
-            drawingPanel.Size = new Size(viewSize, viewSize);
+            drawingPanel.Size = new Size(theWorld.FrameSize, theWorld.FrameSize);
             this.Controls.Add(drawingPanel);
             // The multipliers are some stupid scaling error
-            this.Size = new Size((int)(viewSize * 1.018), (int)(viewSize * 1.035) + 60);
+            this.Size = new Size((int)(theWorld.FrameSize * 1.018), (int)(theWorld.FrameSize * 1.035) + 60);
 
-            // register handlers for the controller's events
+            // Register handlers for the controller's events
             theController.Connected += HandleConnected;
             theController.UpdateArrived += OnFrame;
             theController.Error += ShowError;
@@ -54,6 +63,35 @@ namespace TankWars
             drawingPanel.MouseUp += HandleMouseUp;
             drawingPanel.MouseMove += HandleMouseMove;
             drawingPanel.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+
+            // Load audio
+            timerSound = new SoundPlayer("..\\..\\..\\Resources\\Audio\\Timer.wav");
+            timerSound.Load();
+
+            string currDirectory = Directory.GetCurrentDirectory();
+            song.URL = currDirectory + "\\Song.wav";
+            song.Ctlcontrols.stop();
+            //tankDeathSound.URL = currDirectory + "\\Explosion.wav";
+            //shotSound.URL = currDirectory + "\\Shot.wav";
+            //beamSound.URL = currDirectory + "\\Beam.wav";
+            //powerupCollectedSound.URL = currDirectory + "\\Collected.wav";
+            //respawnSound.URL = currDirectory + "\\Respawn.wav";
+
+            // --- For when using DLLs ---
+            //string currDirectory = Directory.GetCurrentDirectory();
+            //song.URL = currDirectory + "\\Resources\\Audio\\Song.wav";
+            //tankDeathSound.URL = currDirectory + "\\Resources\\Audio\\Explosion.wav";
+            //shotSound.URL = currDirectory + "\\Resources\\Audio\\Shot.wav";
+            //beamSound.URL = currDirectory + "\\Resources\\Audio\\Beam.wav";
+            //powerupCollectedSound.URL = currDirectory + "\\Resources\\Audio\\Collected.wav";
+            //respawnSound.URL = currDirectory + "\\Resources\\Audio\\Respawn.wav";
+
+            // Give needed audio to the drawing panel
+            //drawingPanel.AddSound("tankDeathSound", tankDeathSound);
+            //drawingPanel.AddSound("shotSound", shotSound);
+            //drawingPanel.AddSound("beamSound", beamSound);
+            //drawingPanel.AddSound("powerupCollectedSound", powerupCollectedSound);
+            //drawingPanel.AddSound("respawnSound", respawnSound);
         }
 
         /// <summary>
@@ -209,6 +247,10 @@ namespace TankWars
                 theController.HandleMoveRequest("down");
             if (e.KeyCode == Keys.D)
                 theController.HandleMoveRequest("right");
+            if (e.KeyCode == Keys.Oemplus && theWorld.ZoomLevel < 2)
+                theWorld.ZoomLevel += 0.25;
+            if (e.KeyCode == Keys.OemMinus && theWorld.ZoomLevel > 0.25)
+                theWorld.ZoomLevel -= 0.25;
             if (e.KeyCode == Keys.Escape)
                 Application.Exit();
 
@@ -268,7 +310,7 @@ namespace TankWars
             if (KeyPreview)
             {
                 // Get mouse position and angle from center
-                Vector2D aimDir = new Vector2D(e.X - (viewSize / 2), e.Y - (viewSize / 2));
+                Vector2D aimDir = new Vector2D(e.X - (theWorld.FrameSize / 2), e.Y - (theWorld.FrameSize / 2));
                 theWorld.MousePosition = aimDir;
                 aimDir.Normalize();
 
@@ -278,6 +320,7 @@ namespace TankWars
 
         private void SelectColor()
         {
+            tankColor = "default";
             // Setup the color select popup
             colorPanel = new ColorPopup();
             // Setup button click handlers
@@ -289,17 +332,19 @@ namespace TankWars
             colorPanel.YellowButton.Click += new System.EventHandler(this.YellowButton_Click);
             colorPanel.CyanButton.Click += new System.EventHandler(this.CyanButton_Click);
             colorPanel.PurpleButton.Click += new System.EventHandler(this.PurpleButton_Click);
+            colorPanel.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ColorPanel_Closing);
             colorPanel.CountdownTime.Text = "10";
 
             // Start a 10 second timer to auto close the window
             Thread t = new Thread(ColorSelectDelay);
             t.Start();
-
-            tankColor = "default";
+            timerSound.Play();
 
             // Open the window
             colorPanel.ShowDialog();
             valid = false;
+            song.settings.setMode("Loop", true);
+            song.Ctlcontrols.play();
         }
 
         private void ColorSelectDelay()
@@ -386,6 +431,12 @@ namespace TankWars
             tankColor = "purple";
             valid = false;
             colorPanel.Invoke(new MethodInvoker(delegate { colorPanel.Close(); }));
+        }
+
+        private void ColorPanel_Closing(object sender, FormClosingEventArgs e)
+        {
+            valid = false;
+            timerSound.Stop();
         }
     }
 }

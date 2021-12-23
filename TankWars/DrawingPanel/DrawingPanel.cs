@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Media;
 using System.Windows.Forms;
+using AxWMPLib;
 using Models;
 
 namespace TankWars
@@ -13,6 +16,7 @@ namespace TankWars
         public delegate void ObjectDrawer(object o, PaintEventArgs e);
 
         private const int multiplier = 4000;
+        private bool isRespawning;
 
         // Various image assets for drawing
         private World theWorld;
@@ -22,8 +26,6 @@ namespace TankWars
         private Image farBackground;
         private Image wall;
         private Image explo;
-
-        // Could load each individual sprite once to improve performance?
         private Image GreenTank;
         private Image GreenTurret;
         private Image BlueTank;
@@ -41,17 +43,28 @@ namespace TankWars
         private Image CyanTank;
         private Image CyanTurret;
 
+        // Sound dictionary
+        private Dictionary<string, AxWindowsMediaPlayer> sounds;
+
+        private SoundPlayer tankDeathSound;
+        private SoundPlayer shotSound;
+        private SoundPlayer beamSound;
+        private SoundPlayer powerupCollectedSound;
+        private SoundPlayer respawnSound;
+
+
         public DrawingPanel(World w)
         {
+            // Settings
             DoubleBuffered = true;
             theWorld = w;
+            // Load images
             proj = Image.FromFile("..\\..\\..\\Resources\\Images\\Bullet.png");
             powerup = Image.FromFile("..\\..\\..\\Resources\\Images\\Powerup.png");
             background = Image.FromFile("..\\..\\..\\Resources\\Images\\Background.png");
             farBackground = Image.FromFile("..\\..\\..\\Resources\\Images\\FarBackground.png");
             wall = Image.FromFile("..\\..\\..\\Resources\\Images\\WallSprite.png");
             explo = Image.FromFile("..\\..\\..\\Resources\\Images\\Explosion.png");
-
             GreenTank = Image.FromFile("..\\..\\..\\Resources\\Images\\GreenTank.png");
             GreenTurret = Image.FromFile("..\\..\\..\\Resources\\Images\\GreenTurret.png");
             BlueTank = Image.FromFile("..\\..\\..\\Resources\\Images\\BlueTank.png");
@@ -94,7 +107,33 @@ namespace TankWars
             //YellowTurret = Image.FromFile(currDirectory + "\\Resources\\YellowTurret.png");
             //CyanTank = Image.FromFile(currDirectory + "\\Resources\\CyanTank.png");
             //CyanTurret = Image.FromFile(currDirectory + "\\Resources\\CyanTurret.png");
+
+
+            // Create sounds list
+            sounds = new Dictionary<string, AxWindowsMediaPlayer>();
+
+            tankDeathSound = new SoundPlayer("..\\..\\..\\Resources\\Audio\\Explosion.wav");
+            shotSound = new SoundPlayer("..\\..\\..\\Resources\\Audio\\Shot.wav");
+            beamSound = new SoundPlayer("..\\..\\..\\Resources\\Audio\\Beam.wav");
+            powerupCollectedSound = new SoundPlayer("..\\..\\..\\Resources\\Audio\\Collected.wav");
+            respawnSound = new SoundPlayer("..\\..\\..\\Resources\\Audio\\Respawn.wav");
+
+            // For DLLs
+            //string currDirectory = Directory.GetCurrentDirectory();
+            //tankDeathSound = new SoundPlayer(currDirectory + "\\Resources\\Audio\\Explosion.wav");
+            //shotSound = new SoundPlayer(currDirectory + "\\Resources\\Audio\\Shot.wav");
+            //beamSound = new SoundPlayer(currDirectory + "\\Resources\\Audio\\Beam.wav");
+            //powerupCollectedSound = new SoundPlayer(currDirectory + "\\Resources\\Audio\\Collected.wav");
+            //respawnSound = new SoundPlayer(currDirectory + "\\Resources\\Audio\\Respawn.wav");
         }
+
+        ///// <summary>
+        ///// Adds a specified Media Player sound object to the list of sounds.
+        ///// </summary>
+        //public void AddSound(string nameOfSound, AxWindowsMediaPlayer theSound)
+        //{
+        //    sounds.Add(nameOfSound, theSound);
+        //}
 
         /// <summary>
         /// This method performs a translation and rotation to drawn an object in the world.
@@ -110,7 +149,7 @@ namespace TankWars
             // "push" the current transform
             System.Drawing.Drawing2D.Matrix oldMatrix = e.Graphics.Transform.Clone();
 
-            e.Graphics.TranslateTransform((int)worldX, (int)worldY);
+            e.Graphics.TranslateTransform((int)worldX * (float)theWorld.ZoomLevel, (int)worldY * (float)theWorld.ZoomLevel);
             e.Graphics.RotateTransform((float)angle);
             drawer(o, e);
 
@@ -132,7 +171,7 @@ namespace TankWars
             // Draw the tank
             if (t.Health != 0)
             {
-                e.Graphics.DrawImage(SelectColor(t, true), -30F, -30F, 60f, 60f);
+                e.Graphics.DrawImage(SelectColor(t, true), -30F * (float)theWorld.ZoomLevel, -30F * (float)theWorld.ZoomLevel, (float)(theWorld.TankSize * theWorld.ZoomLevel), (float)(theWorld.TankSize * theWorld.ZoomLevel));
             }
         }
 
@@ -143,7 +182,7 @@ namespace TankWars
             // Draw the turret
             if (t.Health != 0)
             {
-                e.Graphics.DrawImage(SelectColor(t, false), -25f, -25f, 50f, 50f);
+                e.Graphics.DrawImage(SelectColor(t, false), -25f * (float)theWorld.ZoomLevel, -25f * (float)theWorld.ZoomLevel, 50f * (float)theWorld.ZoomLevel, 50f * (float)theWorld.ZoomLevel);
             }
         }
 
@@ -151,7 +190,7 @@ namespace TankWars
         {
             Tank t = o as Tank;
 
-            if (t.Health != 0)
+            if (t.Health != 0 && theWorld.ZoomLevel > 0.5)
             {
                 // Draw name + score
                 StringFormat format = new StringFormat();
@@ -195,7 +234,7 @@ namespace TankWars
             if (b.FrameCount > 0)
             {
                 // Draw the image
-                Pen p = new Pen(Color.White, b.FrameCount / 10);
+                Pen p = new Pen(Color.White, b.FrameCount / 6);
                 e.Graphics.DrawLine(p, 0, 0, 0, -1 * multiplier);
 
                 // Decrement the counter
@@ -218,14 +257,16 @@ namespace TankWars
         {
             DeathAnimation d = o as DeathAnimation;
 
-            if (!d.IsAnimating)
-                d.IsAnimating = true;
-
-            //Draw the next frame in the animation.
-            e.Graphics.DrawImage(explo, -60f, -60f, 120f, 120f);
-
-            // Increment the frame count
-            d.FrameCount++;
+            if (d.FrameCount > 0)
+            {
+                //Draw the next frame in the animation.
+                e.Graphics.DrawImage(explo, -60f * (float)theWorld.ZoomLevel, -60f * (float)theWorld.ZoomLevel, 120f * (float)theWorld.ZoomLevel, 120f * (float)theWorld.ZoomLevel);
+                
+                // Decrement the counter
+                d.FrameCount--;
+            }
+            else
+                d.IsDead = true;
         }
 
         /// <summary>
@@ -240,7 +281,7 @@ namespace TankWars
             // Maybe the color of the proj is required? so have some get color code like the tank
 
             // Draw the image
-            e.Graphics.DrawImage(proj, -15f, -15f, 30f, 30f);
+            e.Graphics.DrawImage(proj, -15f * (float)theWorld.ZoomLevel, -15f * (float)theWorld.ZoomLevel, 30f * (float)theWorld.ZoomLevel, 30f * (float)theWorld.ZoomLevel);
         }
 
         /// <summary>
@@ -259,13 +300,13 @@ namespace TankWars
             double powerupLocY = pwr.Location.GetY();
 
             // Draw the image
-            e.Graphics.DrawImage(powerup, -10f, -10f, 30f, 30f);
+            e.Graphics.DrawImage(powerup, -10f * (float)theWorld.ZoomLevel, -10f * (float)theWorld.ZoomLevel, 30f * (float)theWorld.ZoomLevel, 30f * (float)theWorld.ZoomLevel);
         }
 
         private void WallDrawer(object o, PaintEventArgs e)
         {
             Wall wall = o as Wall;
-            e.Graphics.DrawImage(this.wall, -25f, -25f, 50f, 50f);
+            e.Graphics.DrawImage(this.wall, -25f * (float)theWorld.ZoomLevel, -25f * (float)theWorld.ZoomLevel, (float)(theWorld.WallSize * theWorld.ZoomLevel), (float)(theWorld.WallSize * theWorld.ZoomLevel));
         }
 
         private void DrawWall(Wall wall, PaintEventArgs e)
@@ -277,7 +318,7 @@ namespace TankWars
             double EndPoint = 0;
 
             // wall is verticle
-            if (wall.Point1.GetX() == wall.Point2.GetX())
+            if (P1_X == P2_X)
             {
                 // Which Y coord is the lowest
                 if (P1_Y > P2_Y)
@@ -383,18 +424,19 @@ namespace TankWars
             // Update the object's coordinate system to center the view on the player
             double playerX = theWorld.ClientTank.Location.GetX();
             double playerY = theWorld.ClientTank.Location.GetY();
-            e.Graphics.TranslateTransform((float)(-(playerX) + (this.Size.Width / 2)), (float)(-(playerY) + (this.Size.Width / 2)));
+            e.Graphics.TranslateTransform((float)(-(playerX * theWorld.ZoomLevel) + (theWorld.FrameSize / 2)),
+                (float)(-(playerY * theWorld.ZoomLevel) + (theWorld.FrameSize / 2)));
 
             // Draw the backgrounds
             lock (theWorld)
             {
                 // The farther background is drawn set in place but scrolls slightly to add depth and perspective
-                e.Graphics.DrawImage(farBackground, (float)((-theWorld.Size / 1.25) - (-playerX) * .3),
-                                                    (float)((-theWorld.Size / 1.25) - (-playerY) * .3),
-                                                    (float)(theWorld.Size * 2), (float)(theWorld.Size * 2));
+                e.Graphics.DrawImage(farBackground, (float)((-theWorld.Size) - (-playerX) * .3),
+                                                    (float)((-theWorld.Size) - (-playerY) * .3),
+                                                    (float)(theWorld.Size * (theWorld.ZoomLevel + 2)), (float)(theWorld.Size * (theWorld.ZoomLevel + 2)));
                 // The playing field is drawn to simulate moving in the world with a camera focused on the player
-                e.Graphics.DrawImage(background, (float)(-(theWorld.Size) / 2), (float)(-(theWorld.Size) / 2),
-                (float)theWorld.Size, (float)theWorld.Size);
+                e.Graphics.DrawImage(background, (float)(-(theWorld.Size) / 2) * (float)theWorld.ZoomLevel, (float)(-(theWorld.Size) / 2) * (float)theWorld.ZoomLevel,
+                (float)(theWorld.Size) * (float)theWorld.ZoomLevel, (float)(theWorld.Size) * (float)theWorld.ZoomLevel);
             }
 
             // Draw the walls
@@ -411,20 +453,56 @@ namespace TankWars
             {
                 foreach (Tank tank in theWorld.GetTanks())
                 {
-                    // Draw the tank body
-                    tank.BodyDirection.Normalize();
-                    DrawObjectWithTransform(e, tank, tank.Location.GetX(), tank.Location.GetY(), tank.BodyDirection.ToAngle(), TankDrawer);
-                    // Draw the tank turret
-                    tank.TurretDirection.Normalize();
-                    DrawObjectWithTransform(e, tank, tank.Location.GetX(), tank.Location.GetY(), tank.TurretDirection.ToAngle(), TurretDrawer);
-                    // Draw the tank information
-                    DrawObjectWithTransform(e, tank, tank.Location.GetX(), tank.Location.GetY(), 0, PlayerInfoDrawer);
+                    // Is this the client tank
+                    if (tank == theWorld.ClientTank)
+                    {
+                        // If dead, set flag true
+                        if (tank.Health == 0)
+                        {
+                            isRespawning = true;
+                            continue;
+                        }
+                        // Else alive
+                        // If flag is true, this is respawn frame
+                        if (isRespawning)
+                        {
+                            //sounds.TryGetValue("respawnSound", out AxWindowsMediaPlayer respawnSound);
+                            //respawnSound.Ctlcontrols.play();
+
+                            respawnSound.Play();
+
+                            isRespawning = false; 
+                        }
+                    }
+
+                    if (tank.Health > 0)
+                    {
+                        // Draw the tank body
+                        tank.BodyDirection.Normalize();
+                        DrawObjectWithTransform(e, tank, tank.Location.GetX(), tank.Location.GetY(), tank.BodyDirection.ToAngle(), TankDrawer);
+                        // Draw the tank turret
+                        tank.TurretDirection.Normalize();
+                        DrawObjectWithTransform(e, tank, tank.Location.GetX(), tank.Location.GetY(), tank.TurretDirection.ToAngle(), TurretDrawer);
+                        // Draw the tank information
+                        DrawObjectWithTransform(e, tank, tank.Location.GetX(), tank.Location.GetY(), 0, PlayerInfoDrawer);
+                    }
                 }
             }
 
             // Draw the powerups
             lock (theWorld)
             {
+                // Play audio if needed
+                if (theWorld.PowerupCollected)
+                {
+                    //sounds.TryGetValue("powerupCollectedSound", out AxWindowsMediaPlayer powerupCollectedSound);
+                    //powerupCollectedSound.Ctlcontrols.play();
+
+                    powerupCollectedSound.Play();
+
+                    theWorld.PowerupCollected = false;
+                }
+
                 foreach (Powerup pow in theWorld.GetPowerups())
                 {
                     DrawObjectWithTransform(e, pow, pow.Location.GetX(), pow.Location.GetY(), 0, PowerupDrawer);
@@ -437,18 +515,36 @@ namespace TankWars
                 foreach (Projectile proj in theWorld.GetProjectiles())
                 {
                     DrawObjectWithTransform(e, proj, proj.Location.GetX(), proj.Location.GetY(), proj.Direction.ToAngle(), ProjectileDrawer);
+                    if (!proj.HasPlayedAudio)
+                    {
+                        //sounds.TryGetValue("shotSound", out AxWindowsMediaPlayer shotSound);
+                        //shotSound.Ctlcontrols.play();
+
+                        shotSound.Play();
+
+                        proj.HasPlayedAudio = true;
+                    }
                 }
             }
 
             // Animate the tank deaths
             lock (theWorld)
             {
-                List<DeathAnimation> deaths = (List<DeathAnimation>)theWorld.GetTankDeaths();
-
                 foreach (DeathAnimation death in theWorld.GetTankDeaths())
                 {
                     DrawObjectWithTransform(e, death, death.Tank.Location.GetX(), death.Tank.Location.GetY(), 0, DeathDrawer);
+                    if (!death.HasPlayedAudio)
+                    {
+                        //sounds.TryGetValue("tankDeathSound", out AxWindowsMediaPlayer tankDeathSound);
+                        //tankDeathSound.Ctlcontrols.play();
+
+                        tankDeathSound.Play();
+
+                        death.HasPlayedAudio = true;
+                    }
                 }
+
+                List<DeathAnimation> deaths = (List<DeathAnimation>)theWorld.GetTankDeaths();
 
                 // Check if any tank deaths have finished their animation, remove if yes
                 for (int i = 0; i < deaths.Count(); i++)
@@ -461,13 +557,22 @@ namespace TankWars
             // Animate the beams
             lock (theWorld)
             {
-                List<BeamAnimation> beams = (List<BeamAnimation>)theWorld.GetBeams();
-
                 // Draw each beam in it's current state
-                foreach (BeamAnimation animation in beams)
+                foreach (BeamAnimation animation in theWorld.GetBeams())
                 {
                     DrawObjectWithTransform(e, animation, animation.Beam.Origin.GetX(), animation.Beam.Origin.GetY(), animation.Beam.Direction.ToAngle(), BeamDrawer);
+                    if (!animation.HasPlayedAudio)
+                    {
+                        //sounds.TryGetValue("beamSound", out AxWindowsMediaPlayer beamSound);
+                        //beamSound.Ctlcontrols.play();
+
+                        beamSound.Play();
+
+                        animation.HasPlayedAudio = true;
+                    }
                 }
+
+                List<BeamAnimation> beams = (List<BeamAnimation>)theWorld.GetBeams();
 
                 // Check if any beams have finished their animation, remove if yes
                 for (int i = 0; i < beams.Count(); i++)

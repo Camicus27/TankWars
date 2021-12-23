@@ -11,12 +11,15 @@ namespace Models
         private int frameCounter;
         private Vector2D Endpoint;
         private bool hasDied;
+        private bool hasPlayedAudio;
 
-        public BeamAnimation(Beam beam, int counter, Vector2D Endpoint)
+        public BeamAnimation(Beam beam, Vector2D Endpoint)
         {
             this.beam = beam;
-            frameCounter = counter;
+            frameCounter = 50;
             this.Endpoint = Endpoint;
+            hasPlayedAudio = false;
+            hasDied = false;
         }
 
         /// <summary>
@@ -40,5 +43,10 @@ namespace Models
         /// </summary>
         /// <returns>A Vector2D object containing thh endpoint of the animation object</returns>
         public Vector2D EndPoint { get { return Endpoint; } set { Endpoint = value; } }
+
+        /// <summary>
+        /// Tracks the current state of the audio.
+        /// </summary>
+        public bool HasPlayedAudio { get { return hasPlayedAudio; } set { hasPlayedAudio = value; } }
     }
 }
